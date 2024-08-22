@@ -226,7 +226,19 @@ def get_audio_input(
     """
     assert overlap_len % 2 == 0, f"overlap_length must be even, got {overlap_len}"
 
-    audio_original, _ = librosa.load(str(audio_path), sr=AUDIO_SAMPLE_RATE, mono=True)
+    if isinstance(audio_path, np.ndarray):
+        # if we are providing an audio array directly
+        audio_original = audio_path
+        if len(audio_original.shape) == 2:
+            # downmix stereo to mono with librosa
+            audio_original = librosa.to_mono(audio_original.T)
+        # resample to basic pitch sample rate
+        audio_original = librosa.resample(y=audio_original, orig_sr=44100, target_sr=AUDIO_SAMPLE_RATE)
+        audio_original = audio_original.astype(np.float32)
+
+    else:
+        # default: get audio from a path
+        audio_original, _ = librosa.load(str(audio_path), sr=AUDIO_SAMPLE_RATE, mono=True)
 
     original_length = audio_original.shape[0]
     audio_original = np.concatenate([np.zeros((int(overlap_len / 2),), dtype=np.float32), audio_original])
@@ -446,7 +458,7 @@ def predict(
     """
 
     with no_tf_warnings():
-        print(f"Predicting MIDI for {audio_path}...")
+        # print(f"Predicting MIDI for {audio_path}...")
 
         model_output = run_inference(audio_path, model_or_model_path, debug_file)
         min_note_len = int(np.round(minimum_note_length / 1000 * (AUDIO_SAMPLE_RATE / FFT_HOP)))
