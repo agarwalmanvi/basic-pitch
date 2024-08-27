@@ -229,12 +229,6 @@ def get_audio_input(
     if isinstance(audio_path, np.ndarray):
         # if we are providing an audio array directly
         audio_original = audio_path
-        if len(audio_original.shape) == 2:
-            # downmix stereo to mono with librosa
-            audio_original = librosa.to_mono(audio_original.T)
-        # resample to basic pitch sample rate
-        audio_original = librosa.resample(y=audio_original, orig_sr=44100, target_sr=AUDIO_SAMPLE_RATE)
-        audio_original = audio_original.astype(np.float32)
 
     else:
         # default: get audio from a path
